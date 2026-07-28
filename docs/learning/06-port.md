@@ -161,11 +161,35 @@ $ docker exec web-9090 grep listen /etc/nginx/conf.d/default.conf
 
 ## 실행 결과 요약
 
-| 컨테이너 | 접속 주소 | 내부 포트 | APP_ENV |
-|---|---|---|---|
-| `web-8080` | http://localhost:8080 | 8080 | dev |
-| `web-8081` | http://localhost:8081 | 8080 | dev |
-| `web-9090` | http://localhost:8082 | 9090 | production |
+| 컨테이너 | 접속 주소 | 내부 포트 | APP_ENV | 접속 증거 |
+|---|---|---|---|---|
+| `web-8080` | http://localhost:8080 | 8080 | dev | [browser-8080.png](../images/browser-8080.png) |
+| `web-8081` | http://localhost:8081 | 8080 | dev | [browser-8081.png](../images/browser-8081.png) |
+| `web-9090` | http://localhost:8082 | 9090 | production | [browser-env.png](../images/browser-env.png) |
+
+### 브라우저 접속 화면
+
+**① http://localhost:8080**
+
+![포트 8080 접속](../images/browser-8080.png)
+
+**② http://localhost:8081 — 같은 이미지, 다른 호스트 포트**
+
+![포트 8081 접속](../images/browser-8081.png)
+
+두 화면의 내용은 완전히 동일하고 **주소창의 포트 번호만 다르다.**
+같은 이미지에서 만든 두 컨테이너가 각자 내부 8080을 쓰면서 서로 다른 바깥 포트로 서비스되고 있다는 증거.
+
+**③ http://localhost:8082/env — 환경변수 주입 결과**
+
+![환경변수 확인](../images/browser-env.png)
+
+```
+APP_ENV=production
+NGINX_PORT=9090
+```
+
+**이미지를 다시 빌드하지 않고** `-e` 옵션만으로 기본값(`dev`, `8080`)을 덮어쓴 결과가 브라우저에 그대로 나온다.
 
 ## 스스로 점검하는 질문
 
@@ -181,4 +205,4 @@ $ docker exec web-9090 grep listen /etc/nginx/conf.d/default.conf
 - [x] **같은 이미지를 서로 다른 호스트 포트(8080/8081)로 2개 동시 실행**
 - [x] 포트 충돌 에러를 직접 재현하고 원인/해결 확인
 - [x] 환경변수 주입으로 내부 포트·모드 변경 (재빌드 없이)
-- [ ] 브라우저 접속 화면 캡처 → `docs/images/` 에 추가 예정
+- [x] 브라우저 접속 화면 캡처 (주소창 포함) → `docs/images/`
