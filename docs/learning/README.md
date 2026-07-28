@@ -11,7 +11,8 @@
 | 3 | [Docker 점검](03-docker-check.md) | [03-docker-check.log](../logs/03-docker-check.log) | VM vs 컨테이너, CLI/데몬 구조, 아키텍처 |
 | 4 | [컨테이너 실행과 운영](04-container-run.md) | [04-container-run.log](../logs/04-container-run.log) | exec vs attach, PID 1, 커널, 생명주기 |
 | 5 | [Dockerfile과 이미지 빌드](05-build.md) | [05-build.log](../logs/05-build.log) | 레이어와 캐시, 빌드/실행 시점, FROM 상속 |
-| 6~8 | (진행 예정) | | 포트 매핑 → 마운트/볼륨 → Git |
+| 6 | [포트 매핑](06-port.md) | [06-port.log](../logs/06-port.log) | 네트워크 격리, `-p 호스트:컨테이너` |
+| 7~8 | (진행 예정) | | 마운트/볼륨 → Git |
 
 ## 단계별 한 줄 요약
 
@@ -21,6 +22,7 @@
 - **3단계** — `--version`은 CLI 확인일 뿐, **데몬 확인은 `docker info`의 `Server:` 섹션**으로 한다.
 - **4단계** — 컨테이너는 **PID 1이 살아있는 동안만** 산다. `exec`은 면회객, `attach`는 환자 본인.
 - **5단계** — Dockerfile 한 줄이 층 하나. **층이 깨지면 그 위가 전부 다시 만들어진다.**
+- **6단계** — `EXPOSE`는 문패, `-p`는 문. 내부 포트는 같아도 되고 **바깥 포트만 달라야** 한다.
 
 ## 아직 남은 궁금증 / 다음에 확인할 것
 

@@ -1,0 +1,99 @@
+## 1) 컨테이너는 자기만의 IP를 가진다 (포트 매핑 없이 실행 중인 상태)
+$ docker inspect web-nomap --format "컨테이너 IP: {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}"
+컨테이너 IP: 192.168.215.2
+
+$ ipconfig getifaddr en0 || echo "(맥의 IP)"
+10.13.2.6
+
+$ docker exec web-nomap sh -c "hostname -i"
+192.168.215.2
+
+$ curl -s --max-time 3 http://localhost:8080/healthz ; echo "종료코드=$?"
+종료코드=7
+
+## 2) -p 옵션으로 포트 매핑하여 실행
+$ docker rm -f web-nomap
+web-nomap
+
+$ docker run -d -p 8080:8080 --name web-8080 cody-web:1.0
+0a9d863c34f00359f3552bfe4e2a025b7d13c9f1a1332d1733cf2ac9b56c57f2
+
+$ docker ps --format "table {{.Names}}	{{.Status}}	{{.Ports}}"
+NAMES      STATUS                                     PORTS
+web-8080   Up Less than a second (health: starting)   80/tcp, 0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp
+
+$ docker port web-8080
+8080/tcp -> 0.0.0.0:8080
+8080/tcp -> [::]:8080
+
+## 3) 호스트에서 접속 확인
+$ curl -s http://localhost:8080/healthz
+ok
+
+$ curl -s http://localhost:8080/env
+APP_ENV=dev
+NGINX_PORT=8080
+
+$ curl -s -i http://localhost:8080/ | head -8
+HTTP/1.1 200 OK
+Server: nginx/1.27.5
+Date: Tue, 28 Jul 2026 08:52:16 GMT
+Content-Type: text/html
+Content-Length: 1159
+Last-Modified: Tue, 28 Jul 2026 08:34:41 GMT
+Connection: keep-alive
+ETag: "6a6869a1-487"
+
+$ curl -s http://localhost:8080/ | grep -E "<h1>|eyebrow"
+    <p class="eyebrow">Codyssey · Mission 1</p>
+    <h1>개발 워크스테이션 구축</h1>
+
+## 4) 같은 이미지로 두 번째 컨테이너를 다른 호스트 포트에 실행
+$ docker run -d -p 8081:8080 --name web-8081 cody-web:1.0
+2d033313bfe8939cef08da2d2273e91ba52b4d6182437e5280e0a820ea909f94
+
+$ docker ps --format "table {{.Names}}	{{.Ports}}"
+NAMES      PORTS
+web-8081   80/tcp, 0.0.0.0:8081->8080/tcp, [::]:8081->8080/tcp
+web-8080   80/tcp, 0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp
+
+$ curl -s http://localhost:8080/healthz && curl -s http://localhost:8081/healthz
+ok
+ok
+
+$ curl -s http://localhost:8081/ | grep "<h1>"
+    <h1>개발 워크스테이션 구축</h1>
+
+## 5) 포트 충돌 : 이미 쓰는 호스트 포트를 또 쓰면?
+$ docker run -d -p 8080:8080 --name web-dup cody-web:1.0
+f9b7826294410d2430795399367cd5492522cfe2d8ddc51830eddbcde8d1d528
+docker: Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint web-dup (41a3a7f5db717f9da8bc10968ed7f6595d059b16d9aa8e78dd30e05b38c106f4): Bind for :::8080 failed: port is already allocated
+
+Run 'docker run --help' for more information
+
+$ docker ps -a --format "table {{.Names}}	{{.Status}}" | head -5
+NAMES      STATUS
+web-dup    Created
+web-8081   Up Less than a second (health: starting)
+web-8080   Up 17 seconds (healthy)
+
+$ docker rm -f web-dup
+web-dup
+
+## 6) 환경변수로 컨테이너 내부 포트 자체를 변경 (재빌드 없이)
+$ docker run -d -p 8082:9090 -e NGINX_PORT=9090 -e APP_ENV=production --name web-9090 cody-web:1.0
+bdd7696d01283431a137ba1989ec5f4ba60e3ccf9ce1b3222f8cb705e04c234f
+
+$ docker ps --format "table {{.Names}}	{{.Ports}}"
+NAMES      PORTS
+web-9090   80/tcp, 8080/tcp, 0.0.0.0:8082->9090/tcp, [::]:8082->9090/tcp
+web-8081   80/tcp, 0.0.0.0:8081->8080/tcp, [::]:8081->8080/tcp
+web-8080   80/tcp, 0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp
+
+$ curl -s http://localhost:8082/env
+APP_ENV=production
+NGINX_PORT=9090
+
+$ docker exec web-9090 grep listen /etc/nginx/conf.d/default.conf
+    listen       9090;
+
