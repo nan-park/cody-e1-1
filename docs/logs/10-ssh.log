@@ -73,3 +73,15 @@ $ git fetch origin && git status -sb
 ## main...origin/main
 ?? docs/logs/10-ssh.log
 
+## 8) SSH 경유 푸시 확인
+$ git push origin main
+To github.com:nan-park/cody-e1-1.git
+   c560ef2..99e4614  main -> main
+
+$ git remote -v
+origin	git@github.com:nan-park/cody-e1-1.git (fetch)
+origin	git@github.com:nan-park/cody-e1-1.git (push)
+
+$ git ls-remote --heads origin
+99e46145b9f4fb81bf7c254e5cef5f7d785b2fd1	refs/heads/main
+
