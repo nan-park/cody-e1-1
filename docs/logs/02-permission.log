@@ -1,0 +1,94 @@
+## 실험 1) 파일의 실행 권한(x) : 644 -> 755
+$ printf '#!/bin/sh
+echo permission-practice-ok
+' > run.sh
+
+$ cat run.sh
+#!/bin/sh
+echo permission-practice-ok
+
+$ ls -l run.sh
+-rw-r--r--  1 nika.dev02147536  nika.dev02147536  38  7 28 16:06 run.sh
+
+$ ./run.sh
+(eval):1: permission denied: ./run.sh
+
+$ chmod 755 run.sh
+
+$ ls -l run.sh
+-rwxr-xr-x  1 nika.dev02147536  nika.dev02147536  38  7 28 16:06 run.sh
+
+$ ./run.sh
+permission-practice-ok
+
+## 실험 2) 파일의 읽기 권한(r) : 644 -> 600 -> 000 -> 644
+$ ls -l src/hello.txt
+-rw-r--r--  1 nika.dev02147536  nika.dev02147536  12  7 28 15:47 src/hello.txt
+
+$ chmod 600 src/hello.txt && ls -l src/hello.txt
+-rw-------  1 nika.dev02147536  nika.dev02147536  12  7 28 15:47 src/hello.txt
+
+$ cat src/hello.txt
+line1
+line2
+
+$ chmod 000 src/hello.txt && ls -l src/hello.txt
+----------  1 nika.dev02147536  nika.dev02147536  12  7 28 15:47 src/hello.txt
+
+$ cat src/hello.txt
+cat: src/hello.txt: Permission denied
+
+$ chmod 644 src/hello.txt && ls -l src/hello.txt
+-rw-r--r--  1 nika.dev02147536  nika.dev02147536  12  7 28 15:47 src/hello.txt
+
+$ cat src/hello.txt
+line1
+line2
+
+## 실험 3) 디렉토리의 쓰기 권한(w) : 755 -> 555 (파일 생성 차단)
+$ ls -ld backup
+drwxr-xr-x  3 nika.dev02147536  nika.dev02147536  96  7 28 15:47 backup
+
+$ chmod 555 backup && ls -ld backup
+dr-xr-xr-x  3 nika.dev02147536  nika.dev02147536  96  7 28 15:47 backup
+
+$ touch backup/newfile.txt
+touch: backup/newfile.txt: Permission denied
+
+$ ls backup
+hello_backup.txt
+
+$ chmod 755 backup && ls -ld backup
+drwxr-xr-x  3 nika.dev02147536  nika.dev02147536  96  7 28 15:47 backup
+
+$ touch backup/newfile.txt && ls backup
+hello_backup.txt
+newfile.txt
+
+## 실험 4) 디렉토리의 실행 권한(x) : 755 -> 644 (진입 차단)
+$ chmod 644 backup && ls -ld backup
+drw-r--r--  4 nika.dev02147536  nika.dev02147536  128  7 28 16:06 backup
+
+$ cd backup
+(eval):cd:1: permission denied: backup
+
+$ ls backup
+ls: fts_read: Permission denied
+hello_backup.txt
+newfile.txt
+
+$ cat backup/hello_backup.txt
+cat: backup/hello_backup.txt: Permission denied
+
+$ chmod 755 backup && ls -ld backup
+drwxr-xr-x  4 nika.dev02147536  nika.dev02147536  128  7 28 16:06 backup
+
+$ cat backup/hello_backup.txt
+line1
+line2
+
+$ rm backup/newfile.txt
+
+$ umask
+022
+
