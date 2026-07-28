@@ -109,3 +109,17 @@ ubuntu        24.04     ef91e4b15da8   5 weeks ago      78.1MB
 alpine        latest    d529dd0c6e55   6 weeks ago      8.42MB
 hello-world   latest    e2ac70e7319a   4 months ago     10.1kB
 
+## 6) GitHub 푸시
+$ git push -u origin main
+To https://github.com/nan-park/cody-e1-1.git
+   c6554f3..7423097  main -> main
+branch 'main' set up to track 'origin/main'.
+
+$ git status -sb
+## main...origin/main
+ M docs/logs/08-git.log
+
+$ git log --oneline -3
+7423097 docs: 제출용 기술 문서(README) 작성
+ce73664 docs: 8단계 Git 설정/원격 연동 확인 로그 추가
+db59192 docs: 7단계 바인드 마운트/볼륨 실습 로그 및 학습 일지 추가
