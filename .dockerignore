@@ -5,3 +5,4 @@
 docs
 README.md
 **/.DS_Store
+docker-compose.yml
