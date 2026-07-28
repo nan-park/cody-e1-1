@@ -1,0 +1,111 @@
+## 1) Git 버전 및 사용자/기본브랜치 설정 확인
+$ git --version
+git version 2.53.0
+
+$ git config --get user.name
+nan-park
+
+$ git config --get user.email
+nemyrmain@gmail.com
+
+$ git config --get init.defaultBranch
+main
+
+$ git config --list | grep -Ev "credential|token|password"
+init.defaultbranch=main
+user.name=nan-park
+user.email=nemyrmain@gmail.com
+core.repositoryformatversion=0
+core.filemode=true
+core.bare=false
+core.logallrefupdates=true
+core.ignorecase=true
+core.precomposeunicode=true
+remote.origin.url=https://github.com/nan-park/cody-e1-1.git
+remote.origin.fetch=+refs/heads/*:refs/remotes/origin/*
+branch.main.remote=origin
+branch.main.merge=refs/heads/main
+
+## 2) 원격 저장소(GitHub) 연동 상태
+$ git remote -v
+origin	https://github.com/nan-park/cody-e1-1.git (fetch)
+origin	https://github.com/nan-park/cody-e1-1.git (push)
+
+$ git branch -vv
+* main db59192 [origin/main: 10개 앞] docs: 7단계 바인드 마운트/볼륨 실습 로그 및 학습 일지 추가
+
+$ git status
+현재 브랜치 main
+브랜치가 'origin/main'보다 10개 커밋만큼 앞에 있습니다.
+  (로컬에 있는 커밋을 제출하려면 "git push"를 사용하십시오)
+
+추적하지 않는 파일:
+  (커밋할 사항에 포함하려면 "git add <파일>..."을 사용하십시오)
+	README.md
+	docs/logs/08-git.log
+
+커밋할 사항을 추가하지 않았지만 추적하지 않는 파일이 있습니다 (추적하려면 "git
+add"를 사용하십시오)
+
+## 3) 커밋 이력
+$ git log --oneline
+db59192 docs: 7단계 바인드 마운트/볼륨 실습 로그 및 학습 일지 추가
+b115263 docs: 포트 매핑 브라우저 접속 증거 스크린샷 추가
+2db1cc4 docs: 6단계 포트 매핑 실습 로그 및 학습 일지 추가
+5122076 docs: 5단계 이미지 빌드 실습 로그 및 학습 일지 추가
+7592092 feat: nginx 기반 커스텀 웹서버 이미지 Dockerfile 및 소스 추가
+5283703 docs: 4단계 컨테이너 실행/운영 실습 로그 및 학습 일지 추가
+8bb8688 docs: 0~3단계 학습 일지 추가
+1e3141d docs: 3단계 Docker 설치/데몬 점검 로그 추가
+d4c2b47 docs: 2단계 파일/디렉토리 권한 실습 로그 추가
+f16d00d docs: 1단계 터미널 기본 조작 실습 로그 추가
+c6554f3 Add .gitignore
+
+## 4) 최종 환경 정보
+$ sw_vers && echo "Shell: $SHELL" && echo "Arch: $(uname -m)"
+ProductName:		macOS
+ProductVersion:		15.7.4
+BuildVersion:		24G517
+Shell: /bin/zsh
+Arch: x86_64
+
+$ docker --version && docker compose version && git --version
+Docker version 28.5.2, build ecc6942
+Docker Compose version v2.40.3
+git version 2.53.0
+
+$ docker images
+REPOSITORY    TAG       IMAGE ID       CREATED          SIZE
+<none>        <none>    2c222dde262a   23 minutes ago   48.2MB
+cody-web      1.0       9316f625dded   24 minutes ago   48.2MB
+ubuntu        24.04     ef91e4b15da8   5 weeks ago      78.1MB
+alpine        latest    d529dd0c6e55   6 weeks ago      8.42MB
+hello-world   latest    e2ac70e7319a   4 months ago     10.1kB
+
+$ docker ps --format "table {{.Names}}	{{.Status}}	{{.Ports}}"
+NAMES      STATUS                    PORTS
+web-bind   Up 5 minutes (healthy)    80/tcp, 0.0.0.0:8083->8080/tcp, [::]:8083->8080/tcp
+web-8080   Up 13 minutes (healthy)   80/tcp, 0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp
+
+$ docker volume ls
+DRIVER    VOLUME NAME
+local     cody-data
+
+## 5) dangling(<none>) 이미지 확인 및 정리
+$ docker images -f "dangling=true"
+REPOSITORY   TAG       IMAGE ID       CREATED          SIZE
+<none>       <none>    2c222dde262a   24 minutes ago   48.2MB
+
+$ docker image prune -f
+Deleted Images:
+deleted: sha256:2c222dde262a9a4928561fe451ce3b081085c4e3c121537187dd7067237bdca8
+
+Total reclaimed space: 0B
+
+$ docker images
+REPOSITORY    TAG       IMAGE ID       CREATED          SIZE
+cody-web      1.0       9316f625dded   24 minutes ago   48.2MB
+ubuntu        24.04     ef91e4b15da8   5 weeks ago      78.1MB
+alpine        latest    d529dd0c6e55   6 weeks ago      8.42MB
+hello-world   latest    e2ac70e7319a   4 months ago     10.1kB
+
