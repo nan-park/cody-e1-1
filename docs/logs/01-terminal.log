@@ -1,0 +1,89 @@
+## 1) 현재 위치 확인
+$ pwd
+/Users/nika.dev02147536
+
+## 2) 폴더 생성 & 이동
+$ mkdir -p ~/codyssey/practice/src ~/codyssey/practice/backup
+
+$ cd ~/codyssey/practice && pwd
+/Users/nika.dev02147536/codyssey/practice
+
+## 3) 목록 확인 (숨김 파일 포함)
+$ ls
+backup
+src
+
+$ ls -la
+total 0
+drwxr-xr-x  4 nika.dev02147536  nika.dev02147536  128  7 28 15:47 .
+drwxr-xr-x  3 nika.dev02147536  nika.dev02147536   96  7 28 15:47 ..
+drwxr-xr-x  2 nika.dev02147536  nika.dev02147536   64  7 28 15:47 backup
+drwxr-xr-x  2 nika.dev02147536  nika.dev02147536   64  7 28 15:47 src
+
+## 4) 빈 파일 생성 / 내용 있는 파일 생성 / 내용 확인
+$ touch notes.txt
+
+$ ls -l notes.txt
+-rw-r--r--  1 nika.dev02147536  nika.dev02147536  0  7 28 15:47 notes.txt
+
+$ echo "line1" > src/hello.txt
+
+$ echo "line2" >> src/hello.txt
+
+$ cat src/hello.txt
+line1
+line2
+
+## 5) 복사 / 이름변경(이동)
+$ cp src/hello.txt backup/hello_copy.txt
+
+$ ls -l backup
+total 8
+-rw-r--r--  1 nika.dev02147536  nika.dev02147536  12  7 28 15:47 hello_copy.txt
+
+$ mv backup/hello_copy.txt backup/hello_backup.txt
+
+$ ls -l backup
+total 8
+-rw-r--r--  1 nika.dev02147536  nika.dev02147536  12  7 28 15:47 hello_backup.txt
+
+## 6) 절대경로 vs 상대경로 (같은 파일을 두 방식으로 가리키기)
+$ pwd
+/Users/nika.dev02147536/codyssey/practice
+
+$ cat ./src/hello.txt
+line1
+line2
+
+$ cat /Users/nika.dev02147536/codyssey/practice/src/hello.txt
+line1
+line2
+
+$ cd src && pwd
+/Users/nika.dev02147536/codyssey/practice/src
+
+$ cat ./hello.txt
+line1
+line2
+
+$ cat ../backup/hello_backup.txt
+line1
+line2
+
+$ cd .. && pwd
+/Users/nika.dev02147536/codyssey/practice
+
+## 7) 삭제 & 최종 구조 확인
+$ rm notes.txt
+
+$ ls -la
+total 0
+drwxr-xr-x  4 nika.dev02147536  nika.dev02147536  128  7 28 15:47 .
+drwxr-xr-x  3 nika.dev02147536  nika.dev02147536   96  7 28 15:47 ..
+drwxr-xr-x  3 nika.dev02147536  nika.dev02147536   96  7 28 15:47 backup
+drwxr-xr-x  3 nika.dev02147536  nika.dev02147536   96  7 28 15:47 src
+
+$ find . -type f
+./backup/hello_backup.txt
+./src/hello.txt
+
