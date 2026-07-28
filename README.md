@@ -111,7 +111,8 @@ cody-e1-1/
     │   ├── 06-port.log
     │   ├── 07-mount-volume.log
     │   ├── 08-git.log
-    │   └── 09-compose.log
+    │   ├── 09-compose.log
+    │   └── 10-ssh.log
     ├── learning/               # 단계별 개념 정리 및 시행착오 (학습 일지)
     └── images/                 # 브라우저 접속 · 연동 스크린샷
 ```
@@ -609,7 +610,37 @@ hello-from-compose                           ← 이름 있는 볼륨 덕분에 
 | Compose 멀티 컨테이너 + 컨테이너 간 통신 | ✅ |
 | Compose 운영 명령 (`up`/`down`/`ps`/`logs`) | ✅ |
 | 환경 변수 활용 (설정과 코드의 분리) | ✅ |
-| GitHub SSH 키 설정 | 진행 예정 |
+| GitHub SSH 키 설정 | ✅ |
+
+### GitHub SSH 키 설정
+
+HTTPS(토큰) 대신 SSH 키 쌍으로 인증하도록 전환했습니다.
+
+```sh
+ssh-keygen -t ed25519 -C "nan-park@codyssey-e1-1" -f ~/.ssh/id_ed25519 -N ""
+```
+
+```
+$ ls -l ~/.ssh
+-rw-------  419  id_ed25519        ← 개인키 · 권한 600 (남이 읽을 수 있으면 SSH가 접속 거부)
+-rw-r--r--  104  id_ed25519.pub    ← 공개키 · 권한 644
+
+$ ssh -T git@github.com
+Hi nan-park! You've successfully authenticated, but GitHub does not provide shell access.
+
+$ git remote set-url origin git@github.com:nan-park/cody-e1-1.git
+$ git remote -v
+origin  git@github.com:nan-park/cody-e1-1.git (fetch)
+origin  git@github.com:nan-park/cody-e1-1.git (push)
+```
+
+**2단계에서 배운 `600` 권한이 여기서 실제로 강제됩니다.** `ssh-keygen`은 umask(022)를 따르지 않고
+개인키를 직접 600으로 생성하며, 권한이 열려 있으면 SSH가 접속을 거부합니다.
+
+공개키는 GitHub가 `github.com/<사용자명>.keys`로 공개하는 정보라 노출되어도 안전하지만,
+**개인키는 저장소·로그·스크린샷 어디에도 포함하지 않았습니다.**
+
+전체 로그: [`10-ssh.log`](docs/logs/10-ssh.log) · 정리: [학습 일지 10단계](docs/learning/10-ssh.md)
 
 ---
 
@@ -628,6 +659,7 @@ hello-from-compose                           ← 이름 있는 볼륨 덕분에 
 | 6 | [포트 매핑](docs/learning/06-port.md) | 네트워크 격리, `-p` |
 | 7 | [바인드 마운트와 볼륨](docs/learning/07-mount-volume.md) | 실시간 반영, 데이터 영속성 |
 | 9 | [Docker Compose](docs/learning/09-compose.md) *(보너스)* | 서비스 디스커버리, 멀티 컨테이너 |
+| 10 | [GitHub SSH 키](docs/learning/10-ssh.md) *(보너스)* | 공개키/개인키, 권한 600의 이유 |
 
 ---
 

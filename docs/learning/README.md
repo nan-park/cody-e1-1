@@ -15,6 +15,7 @@
 | 7 | [바인드 마운트와 볼륨](07-mount-volume.md) | [07-mount-volume.log](../logs/07-mount-volume.log) | 실시간 반영, 데이터 영속성 |
 | 8 | (README 참고) | [08-git.log](../logs/08-git.log) | Git 설정, GitHub 연동, 제출 |
 | 9 | [Docker Compose](09-compose.md) *(보너스)* | [09-compose.log](../logs/09-compose.log) | 서비스 디스커버리, 멀티 컨테이너 |
+| 10 | [GitHub SSH 키](10-ssh.md) *(보너스)* | [10-ssh.log](../logs/10-ssh.log) | 공개키/개인키, 권한 600의 이유 |
 
 ## 단계별 한 줄 요약
 
@@ -28,6 +29,7 @@
 - **7단계** — 바인드 마운트는 **내 파일을 보여주는 것**, 볼륨은 **컨테이너 데이터를 밖에 보관하는 것**.
 - **8단계** — `git commit`은 로컬까지, **GitHub 반영은 `git push`** 부터.
 - **9단계** — Compose는 새 기술이 아니라 **`run` 옵션을 파일로 옮긴 것**. 서비스 이름이 곧 주소다.
+- **10단계** — 공개키는 **자물쇠**(공개해도 안전), 개인키는 **열쇠**(600 권한 강제).
 
 ## 아직 남은 궁금증 / 다음에 확인할 것
 
