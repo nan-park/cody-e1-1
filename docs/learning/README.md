@@ -10,7 +10,8 @@
 | 2 | [파일 권한](02-permission.md) | [02-permission.log](../logs/02-permission.log) | r/w/x, 755·644의 원리, 디렉토리의 x |
 | 3 | [Docker 점검](03-docker-check.md) | [03-docker-check.log](../logs/03-docker-check.log) | VM vs 컨테이너, CLI/데몬 구조, 아키텍처 |
 | 4 | [컨테이너 실행과 운영](04-container-run.md) | [04-container-run.log](../logs/04-container-run.log) | exec vs attach, PID 1, 커널, 생명주기 |
-| 5~8 | (진행 예정) | | 이미지 빌드 → 포트 → 마운트/볼륨 → Git |
+| 5 | [Dockerfile과 이미지 빌드](05-build.md) | [05-build.log](../logs/05-build.log) | 레이어와 캐시, 빌드/실행 시점, FROM 상속 |
+| 6~8 | (진행 예정) | | 포트 매핑 → 마운트/볼륨 → Git |
 
 ## 단계별 한 줄 요약
 
@@ -19,10 +20,12 @@
 - **2단계** — `r/w/x = 4/2/1`을 3묶음으로 더한 게 숫자 표기. 단 **디렉토리에서는 의미가 바뀐다**(`x` = 진입).
 - **3단계** — `--version`은 CLI 확인일 뿐, **데몬 확인은 `docker info`의 `Server:` 섹션**으로 한다.
 - **4단계** — 컨테이너는 **PID 1이 살아있는 동안만** 산다. `exec`은 면회객, `attach`는 환자 본인.
+- **5단계** — Dockerfile 한 줄이 층 하나. **층이 깨지면 그 위가 전부 다시 만들어진다.**
 
 ## 아직 남은 궁금증 / 다음에 확인할 것
 
-- [ ] 이미지가 "층(layer)"으로 저장된다는 게 실제로 어떤 의미인지 (5단계 빌드에서 확인)
+- [x] 이미지가 "층(layer)"으로 저장된다는 게 실제로 어떤 의미인지 → **5단계에서 확인**
+      (`docker history`로 확인. Dockerfile 명령 1줄 = 층 1개, 캐시 단위이기도 하다)
 - [ ] 컨테이너를 지우면 안의 데이터는 어떻게 되는지 (7단계 볼륨에서 확인)
 - [x] `docker run`의 `-d`, `-it` 옵션이 각각 무슨 차이를 만드는지 → **4단계에서 확인**
       (`-it`는 앞에서 붙잡고, `-d`는 뒤로 떼어놓는다)
