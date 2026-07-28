@@ -1,0 +1,31 @@
+# nginx 공식 이미지는 시작할 때 /etc/nginx/templates/*.template 파일의
+# ${변수} 를 실제 환경변수 값으로 치환해 /etc/nginx/conf.d/ 아래에 설정 파일을 생성한다.
+# => 이미지를 다시 빌드하지 않고도 -e 옵션만으로 포트나 모드를 바꿀 수 있다. (설정과 코드의 분리)
+
+server {
+    # ${NGINX_PORT} 는 컨테이너 시작 시 실제 값으로 바뀐다 (기본값 8080)
+    listen       ${NGINX_PORT};
+    server_name  _;
+
+    root  /usr/share/nginx/html;
+    index index.html;
+
+    # 상태 확인 전용 경로: Dockerfile 의 HEALTHCHECK 가 이 주소를 호출한다.
+    # access_log off -> 헬스체크 요청으로 로그가 지저분해지는 것을 방지
+    location = /healthz {
+        access_log off;
+        add_header Content-Type text/plain;
+        return 200 "ok\n";
+    }
+
+    # 주입된 환경변수를 눈으로 확인하기 위한 경로
+    location = /env {
+        add_header Content-Type text/plain;
+        return 200 "APP_ENV=${APP_ENV}\nNGINX_PORT=${NGINX_PORT}\n";
+    }
+
+    # 그 외 요청은 정적 파일에서 찾고, 없으면 404
+    location / {
+        try_files $uri $uri/ =404;
+    }
+}

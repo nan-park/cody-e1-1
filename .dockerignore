@@ -1,0 +1,7 @@
+# 이미지 안에 들어갈 필요가 없는 것들 (빌드 컨텍스트에서 제외)
+.git
+.gitignore
+.claude
+docs
+README.md
+**/.DS_Store

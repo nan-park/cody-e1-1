@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Codyssey Dev Workstation</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <main class="card">
+    <p class="eyebrow">Codyssey · Mission 1</p>
+    <h1>개발 워크스테이션 구축</h1>
+    <p class="desc">
+      이 페이지는 <strong>nginx:alpine</strong> 베이스 이미지 위에
+      직접 작성한 Dockerfile로 빌드한 커스텀 이미지에서 서빙되고 있습니다.
+    </p>
+
+    <ul class="facts">
+      <li><span>베이스 이미지</span><code>nginx:1.27-alpine</code></li>
+      <li><span>컨테이너 내부 포트</span><code>8080</code></li>
+      <li><span>상태 확인</span><code>GET /healthz</code></li>
+      <li><span>환경 확인</span><code>GET /env</code></li>
+    </ul>
+
+    <p class="note">
+      호스트 포트를 8080 / 8081 무엇으로 바꿔 매핑해도 컨테이너 내부는 항상 8080입니다.
+      이것이 포트 매핑(<code>-p 호스트:컨테이너</code>)이 필요한 이유입니다.
+    </p>
+  </main>
+</body>
+</html>
