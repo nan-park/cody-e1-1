@@ -1,0 +1,183 @@
+## 1) 정리: 앞 단계 컨테이너 일부 제거 (web-8080 은 비교용으로 유지)
+$ docker rm -f web-8081 web-9090
+web-8081
+web-9090
+
+## 2) 바인드 마운트로 실행 (-v 호스트경로:컨테이너경로:ro)
+$ pwd
+/Users/nika.dev02147536/Documents/Projects/Codyssey/cody-e1-1
+
+$ docker run -d -p 8083:8080 -v "$(pwd)/app/site:/usr/share/nginx/html:ro" --name web-bind cody-web:1.0
+0e4512f601c65c6b5eba11b7e2af6652403f12b32f6072bee5cf504a402e5bc5
+
+$ docker ps --format "table {{.Names}}	{{.Ports}}"
+NAMES      PORTS
+web-bind   80/tcp, 0.0.0.0:8083->8080/tcp, [::]:8083->8080/tcp
+web-8080   80/tcp, 0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp
+
+$ docker inspect web-bind --format "{{range .Mounts}}Type={{.Type}}{{\"
+\"}}Source={{.Source}}{{\"
+\"}}Destination={{.Destination}}{{\"
+\"}}ReadOnly={{.RW | not}}{{end}}"
+Type=bind
+Source=/Users/nika.dev02147536/Documents/Projects/Codyssey/cody-e1-1/app/site
+Destination=/usr/share/nginx/html
+ReadOnly=true
+
+## 3) [변경 전] 두 컨테이너 응답 비교
+$ echo "--- 8080 (이미지에 구워진 파일) ---"; curl -s http://localhost:8080/ | grep "<h1>"
+--- 8080 (이미지에 구워진 파일) ---
+    <h1>개발 워크스테이션 구축</h1>
+
+$ echo "--- 8083 (내 맥 폴더를 마운트) ---"; curl -s http://localhost:8083/ | grep "<h1>"
+--- 8083 (내 맥 폴더를 마운트) ---
+    <h1>개발 워크스테이션 구축</h1>
+
+## 4) 호스트 파일만 수정 (빌드/재시작 없음)
+$ grep "<h1>" app/site/index.html
+    <h1>개발 워크스테이션 구축</h1>
+
+$ perl -pi -e 's|<h1>개발 워크스테이션 구축</h1>|<h1>개발 워크스테이션 구축 — 바인드 마운트 반영 테스트</h1>|' app/site/index.html
+
+$ grep "<h1>" app/site/index.html
+    <h1>개발 워크스테이션 구축 — 바인드 마운트 반영 테스트</h1>
+
+## 5) [변경 후] 두 컨테이너 응답 비교
+$ echo "--- 8080 (이미지에 구워진 파일) ---"; curl -s http://localhost:8080/ | grep "<h1>"
+--- 8080 (이미지에 구워진 파일) ---
+    <h1>개발 워크스테이션 구축</h1>
+
+$ echo "--- 8083 (바인드 마운트) ---"; curl -s http://localhost:8083/ | grep "<h1>"
+--- 8083 (바인드 마운트) ---
+    <h1>개발 워크스테이션 구축 — 바인드 마운트 반영 테스트</h1>
+
+## 6) 컨테이너 안에서 직접 확인
+$ docker exec web-bind grep "<h1>" /usr/share/nginx/html/index.html
+    <h1>개발 워크스테이션 구축 — 바인드 마운트 반영 테스트</h1>
+
+$ docker exec web-8080 grep "<h1>" /usr/share/nginx/html/index.html
+    <h1>개발 워크스테이션 구축</h1>
+
+## 7) 읽기전용(:ro) 마운트라 컨테이너에서 쓰기는 거부된다
+$ docker exec web-bind sh -c "echo test >> /usr/share/nginx/html/index.html"
+sh: can't create /usr/share/nginx/html/index.html: Read-only file system
+
+## 8) 원래대로 되돌리면 즉시 다시 반영된다
+$ perl -pi -e 's|<h1>개발 워크스테이션 구축 — 바인드 마운트 반영 테스트</h1>|<h1>개발 워크스테이션 구축</h1>|' app/site/index.html
+
+$ curl -s http://localhost:8083/ | grep "<h1>"
+    <h1>개발 워크스테이션 구축</h1>
+
+$ git status --short app/site/index.html; echo "(git 기준 변경 없음 = 원상복구 완료)"
+(git 기준 변경 없음 = 원상복구 완료)
+
+## 9) [문제 재현] 볼륨 없이 컨테이너 안에 데이터를 쓰면?
+$ docker run -d --name novol ubuntu:24.04 sleep infinity
+c8f17f04e72cd4136df159883ce447afed21dbdbf4bb2282a5074d9849c7fdbb
+
+$ docker exec novol sh -c "mkdir -p /data && echo \"중요한 사용자 데이터\" > /data/important.txt"
+
+$ docker exec novol cat /data/important.txt
+중요한 사용자 데이터
+
+$ docker rm -f novol
+novol
+
+$ docker run -d --name novol ubuntu:24.04 sleep infinity
+48826ef2b5a51dfcb9d2a3b97a6ea5a056f946042a3a1a01ebdafb3c39a09a92
+
+$ docker exec novol cat /data/important.txt
+cat: /data/important.txt: No such file or directory
+
+$ docker rm -f novol
+novol
+
+## 10) [해결] 볼륨 생성 및 연결
+$ docker volume create cody-data
+cody-data
+
+$ docker volume ls
+DRIVER    VOLUME NAME
+local     cody-data
+
+$ docker run -d --name vol-test1 -v cody-data:/data ubuntu:24.04 sleep infinity
+d890a8902d4658d9c670d4b382e1d6f59bd4b195b064a3d76d12825919162b19
+
+$ docker exec vol-test1 sh -c "echo \"중요한 사용자 데이터\" > /data/important.txt; date >> /data/important.txt"
+
+$ docker exec vol-test1 cat /data/important.txt
+중요한 사용자 데이터
+Tue Jul 28 09:02:34 UTC 2026
+
+$ docker inspect vol-test1 --format "{{range .Mounts}}Type={{.Type}} / Name={{.Name}} / Destination={{.Destination}}{{end}}"
+Type=volume / Name=cody-data / Destination=/data
+
+## 11) [삭제 전/후 비교] 컨테이너를 강제 삭제
+$ docker rm -f vol-test1
+vol-test1
+
+$ docker ps -a --format "table {{.Names}}	{{.Status}}"
+NAMES      STATUS
+web-bind   Up About a minute (healthy)
+web-8080   Up 10 minutes (healthy)
+
+$ docker volume ls
+DRIVER    VOLUME NAME
+local     cody-data
+
+## 12) 새 컨테이너에 같은 볼륨을 연결
+$ docker run -d --name vol-test2 -v cody-data:/data ubuntu:24.04 sleep infinity
+0ac78c43d61157efe8ecf8d46451535c757df4eb300803b6817c6484e3284271
+
+$ docker exec vol-test2 cat /data/important.txt
+중요한 사용자 데이터
+Tue Jul 28 09:02:34 UTC 2026
+
+$ docker exec vol-test2 sh -c "echo \"두번째 컨테이너가 추가한 줄\" >> /data/important.txt"
+
+$ docker exec vol-test2 cat /data/important.txt
+중요한 사용자 데이터
+Tue Jul 28 09:02:34 UTC 2026
+두번째 컨테이너가 추가한 줄
+
+## 13) 볼륨은 실제로 어디에 저장되나
+$ docker volume inspect cody-data
+[
+    {
+        "CreatedAt": "2026-07-28T18:02:34+09:00",
+        "Driver": "local",
+        "Labels": null,
+        "Mountpoint": "/var/lib/docker/volumes/cody-data/_data",
+        "Name": "cody-data",
+        "Options": null,
+        "Scope": "local"
+    }
+]
+
+$ ls /var/lib/docker/volumes 2>&1 || echo "(맥에서는 이 경로가 보이지 않는다 - 리눅스 VM 안에 있기 때문)"
+ls: /var/lib/docker/volumes: No such file or directory
+(맥에서는 이 경로가 보이지 않는다 - 리눅스 VM 안에 있기 때문)
+
+$ docker run --rm -v cody-data:/data alpine sh -c "ls -l /data && cat /data/important.txt"
+Unable to find image 'alpine:latest' locally
+latest: Pulling from library/alpine
+55afa1ecc21d: Pulling fs layer
+55afa1ecc21d: Verifying Checksum
+55afa1ecc21d: Download complete
+55afa1ecc21d: Pull complete
+Digest: sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
+Status: Downloaded newer image for alpine:latest
+total 4
+-rw-r--r--    1 root     root            99 Jul 28 09:02 important.txt
+중요한 사용자 데이터
+Tue Jul 28 09:02:34 UTC 2026
+두번째 컨테이너가 추가한 줄
+
+## 14) 정리
+$ docker rm -f vol-test2
+vol-test2
+
+$ docker volume ls
+DRIVER    VOLUME NAME
+local     cody-data
+
