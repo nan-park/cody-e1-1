@@ -83,7 +83,7 @@ git version 2.53.0
 | 14 | **바인드 마운트 실시간 반영 (변경 전/후 비교)** | ✅ | [07-mount-volume.log](docs/logs/07-mount-volume.log) |
 | 15 | **볼륨 영속성 (컨테이너 삭제 전/후 비교)** | ✅ | [07-mount-volume.log](docs/logs/07-mount-volume.log) |
 | 16 | Git 사용자 정보 / 기본 브랜치 설정 | ✅ | [08-git.log](docs/logs/08-git.log) |
-| 17 | GitHub 원격 저장소 연동 및 push | ✅ | [08-git.log](docs/logs/08-git.log) |
+| 17 | GitHub 원격 저장소 연동 및 push | ✅ | [08-git.log](docs/logs/08-git.log) · [스크린샷](#73-연동-증거-스크린샷) |
 | 18 | 환경 변수로 설정 주입 (보너스) | ✅ | [06-port.log](docs/logs/06-port.log) |
 
 ---
@@ -327,6 +327,8 @@ $ docker ps -a / docker images / docker volume ls
 
 ## 7. Git 설정 및 GitHub 연동
 
+### 7.1 Git 설정
+
 ```
 $ git config --get user.name
 nan-park
@@ -346,6 +348,40 @@ $ git branch -vv
 ```
 
 전체 출력은 [`08-git.log`](docs/logs/08-git.log)에 있습니다.
+
+### 7.2 원격 반영(push) 확인
+
+```
+$ git push -u origin main
+To https://github.com/nan-park/cody-e1-1.git
+   c6554f3..7423097  main -> main
+branch 'main' set up to track 'origin/main'.
+
+$ git ls-remote --heads origin           # GitHub 쪽 실제 상태를 직접 조회
+7423097245ff1399151a9337599d1b34744f1246        refs/heads/main
+
+$ git status -sb
+## main...origin/main                     # "앞에 N개" 표시 없음 = 로컬·원격 동기화
+```
+
+### 7.3 연동 증거 스크린샷
+
+**① VSCode — GitHub 계정 로그인 및 저장소 연동**
+
+![VSCode GitHub 연동](docs/images/vscode-github.png)
+
+Source Control 패널에 커밋 그래프가 표시되고, `main` 브랜치 옆의 원격 동기화 아이콘과
+하단 상태바의 브랜치 정보로 GitHub 저장소와 연결된 상태를 확인할 수 있습니다.
+
+**② GitHub 저장소 페이지**
+
+![GitHub 저장소](docs/images/github-repo.png)
+
+`github.com/nan-park/cody-e1-1` (Public) — 커밋 이력, 소스(`app/`, `Dockerfile`),
+문서(`docs/`), README 렌더링이 모두 반영된 상태입니다.
+
+### 7.4 커밋 이력
+
 커밋은 단계별로 나누어 남겼으며, 성격에 따라 `feat:` / `docs:` 접두어를 구분했습니다.
 
 ```
