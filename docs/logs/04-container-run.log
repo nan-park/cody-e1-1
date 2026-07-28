@@ -1,0 +1,195 @@
+## 1) hello-world 실행 (이미지 0개 상태에서 시작)
+$ docker images
+REPOSITORY   TAG       IMAGE ID   CREATED   SIZE
+
+$ docker run hello-world
+Unable to find image 'hello-world:latest' locally
+latest: Pulling from library/hello-world
+4f55086f7dd0: Pulling fs layer
+4f55086f7dd0: Verifying Checksum
+4f55086f7dd0: Download complete
+4f55086f7dd0: Pull complete
+Digest: sha256:c3cbe1cc1aa588a64951ac6286e0df7b27fe2e6324b1001c619bb358770c0178
+Status: Downloaded newer image for hello-world:latest
+
+Hello from Docker!
+This message shows that your installation appears to be working correctly.
+
+To generate this message, Docker took the following steps:
+ 1. The Docker client contacted the Docker daemon.
+ 2. The Docker daemon pulled the "hello-world" image from the Docker Hub.
+    (amd64)
+ 3. The Docker daemon created a new container from that image which runs the
+    executable that produces the output you are currently reading.
+ 4. The Docker daemon streamed that output to the Docker client, which sent it
+    to your terminal.
+
+To try something more ambitious, you can run an Ubuntu container with:
+ $ docker run -it ubuntu bash
+
+Share images, automate workflows, and more with a free Docker ID:
+ https://hub.docker.com/
+
+For more examples and ideas, visit:
+ https://docs.docker.com/get-started/
+
+
+## 2) 이미지와 컨테이너는 별개다
+$ docker images
+REPOSITORY    TAG       IMAGE ID       CREATED        SIZE
+hello-world   latest    e2ac70e7319a   4 months ago   10.1kB
+
+$ docker ps
+CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+
+$ docker ps -a
+CONTAINER ID   IMAGE         COMMAND    CREATED          STATUS                     PORTS     NAMES
+2951c374aebf   hello-world   "/hello"   10 seconds ago   Exited (0) 9 seconds ago             angry_johnson
+
+## 3) ubuntu 컨테이너 내부 진입 (-it)
+$ docker pull ubuntu:24.04
+24.04: Pulling from library/ubuntu
+ca2678b20700: Pulling fs layer
+ca2678b20700: Verifying Checksum
+ca2678b20700: Download complete
+ca2678b20700: Pull complete
+Digest: sha256:4fbb8e6a8395de5a7550b33509421a2bafbc0aab6c06ba2cef9ebffbc7092d90
+Status: Downloaded newer image for ubuntu:24.04
+docker.io/library/ubuntu:24.04
+
+$ docker run -it --name ubuntu-lab ubuntu:24.04 bash
+root@227c9a06f727:/# whoami
+root
+root@227c9a06f727:/# pwd
+/
+root@227c9a06f727:/# ls /
+bin   dev  home  lib64  mnt  proc  run   srv  tmp  var
+boot  etc  lib   media  opt  root  sbin  sys  usr
+root@227c9a06f727:/# head -2 /etc/os-release
+PRETTY_NAME="Ubuntu 24.04.4 LTS"
+NAME="Ubuntu"
+root@227c9a06f727:/# echo "hello from ubuntu container"
+hello from ubuntu container
+root@227c9a06f727:/# cat /etc/hostname
+227c9a06f727
+root@227c9a06f727:/# exit
+exit
+
+$ docker ps
+CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+
+$ docker ps -a --format "table {{.Names}}	{{.Image}}	{{.Status}}"
+NAMES           IMAGE          STATUS
+ubuntu-lab      ubuntu:24.04   Exited (0) Less than a second ago
+angry_johnson   hello-world    Exited (0) 29 seconds ago
+
+## 4) -d 옵션: 백그라운드 실행
+$ docker run -d --name ubuntu-daemon ubuntu:24.04 sleep infinity
+f9b3d044178eef2afbc22acdcc1786f1b505e7bbdcafa6a42e8fb597227eb5bd
+
+$ docker ps --format "table {{.Names}}	{{.Status}}	{{.Command}}"
+NAMES           STATUS                  COMMAND
+ubuntu-daemon   Up Less than a second   "sleep infinity"
+
+## 5) exec : 실행 중인 컨테이너에 '별도 프로세스'로 들어가기
+$ docker exec -it ubuntu-daemon bash
+root@f9b3d044178e:/# ps -ef
+UID          PID    PPID  C STIME TTY          TIME CMD
+root           1       0  0 08:11 ?        00:00:00 sleep infinity
+root          16       0  1 08:12 pts/1    00:00:00 bash
+root          24      16  0 08:12 pts/1    00:00:00 ps -ef
+root@f9b3d044178e:/# echo "I am a separate process, not PID 1"
+I am a separate process, not PID 1
+root@f9b3d044178e:/# exit
+exit
+
+$ docker ps --format "table {{.Names}}	{{.Status}}"
+NAMES           STATUS
+ubuntu-daemon   Up 31 seconds
+
+## 6) attach : 컨테이너의 '메인 프로세스(PID 1)'에 직접 붙기
+$ docker run -dit --name ubuntu-attach ubuntu:24.04 bash
+12d7b7a2030b19970cbc5ece5ea5d532ee79b969efc0498535f4e61d06bb827c
+
+$ docker ps --format "table {{.Names}}	{{.Status}}"
+NAMES           STATUS
+ubuntu-attach   Up Less than a second
+ubuntu-daemon   Up 50 seconds
+
+$ docker attach ubuntu-attach
+root@12d7b7a2030b:/# ps -ef | cat
+your 131072x1 screen size is bogus. expect trouble
+UID          PID    PPID  C STIME TTY          TIME CMD
+root           1       0  1 08:12 pts/0    00:00:00 bash
+root           9       1  0 08:12 pts/0    00:00:00 ps -ef
+root          10       1  0 08:12 pts/0    00:00:00 cat
+
+I AM PID 1 - if I exit, container dies
+
+exit
+
+$ docker ps -a --format "table {{.Names}}	{{.Status}}"
+NAMES           STATUS
+ubuntu-attach   Exited (0) Less than a second ago
+ubuntu-daemon   Up 53 seconds
+ubuntu-lab      Exited (0) 27 minutes ago
+angry_johnson   Exited (0) 27 minutes ago
+
+## 7) 운영 명령: logs / stats / stop / start / rm
+$ docker logs ubuntu-attach
+root@12d7b7a2030b:/# root@12d7b7a2030b:/# ps -ef | cat
+your 131072x1 screen size is bogus. expect trouble
+UID          PID    PPID  C STIME TTY          TIME CMD
+root           1       0  1 08:12 pts/0    00:00:00 bash
+root           9       1  0 08:12 pts/0    00:00:00 ps -ef
+root          10       1  0 08:12 pts/0    00:00:00 cat
+
+I AM PID 1 - if I exit, container dies
+
+exit
+
+$ docker exec ubuntu-daemon sh -c "echo hello-log-line > /proc/1/fd/1"
+
+$ docker logs ubuntu-daemon
+hello-log-line
+
+$ docker stats --no-stream
+CONTAINER ID   NAME            CPU %     MEM USAGE / LIMIT   MEM %     NET I/O         BLOCK I/O        PIDS
+f9b3d044178e   ubuntu-daemon   0.00%     900KiB / 15.67GiB   0.01%     1.38kB / 126B   7.02MB / 4.1kB   1
+
+$ docker stop ubuntu-daemon
+ubuntu-daemon
+
+$ docker ps -a --format "table {{.Names}}	{{.Status}}"
+NAMES           STATUS
+ubuntu-attach   Exited (0) 21 seconds ago
+ubuntu-daemon   Exited (137) Less than a second ago
+ubuntu-lab      Exited (0) 27 minutes ago
+angry_johnson   Exited (0) 28 minutes ago
+
+$ docker start ubuntu-daemon
+ubuntu-daemon
+
+$ docker ps --format "table {{.Names}}	{{.Status}}"
+NAMES           STATUS
+ubuntu-daemon   Up Less than a second
+
+$ docker rm -f ubuntu-daemon ubuntu-attach ubuntu-lab
+ubuntu-daemon
+ubuntu-attach
+ubuntu-lab
+
+$ docker container prune -f
+Deleted Containers:
+2951c374aebf9e46254eef64f34a6394b12f4fed695a3aab15e3ad066dae9b7c
+
+Total reclaimed space: 0B
+
+$ docker ps -a
+CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+
+$ docker images
+REPOSITORY    TAG       IMAGE ID       CREATED        SIZE
+ubuntu        24.04     ef91e4b15da8   5 weeks ago    78.1MB
+hello-world   latest    e2ac70e7319a   4 months ago   10.1kB
+
