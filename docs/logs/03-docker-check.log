@@ -1,0 +1,53 @@
+## 1) CLI(클라이언트) 설치 확인
+$ docker --version
+Docker version 28.5.2, build ecc6942
+
+$ docker compose version
+Docker Compose version v2.40.3
+
+$ which docker
+/Users/nika.dev02147536/.orbstack/bin/docker
+
+## 2) 데몬(엔진) 동작 확인
+$ docker info | head -30
+Client:
+ Version:    28.5.2
+ Context:    orbstack
+ Debug Mode: false
+ Plugins:
+  buildx: Docker Buildx (Docker Inc.)
+    Version:  v0.29.1
+    Path:     /Users/nika.dev02147536/.docker/cli-plugins/docker-buildx
+  compose: Docker Compose (Docker Inc.)
+    Version:  v2.40.3
+    Path:     /Users/nika.dev02147536/.docker/cli-plugins/docker-compose
+
+Server:
+ Containers: 0
+  Running: 0
+  Paused: 0
+  Stopped: 0
+ Images: 0
+ Server Version: 28.5.2
+ Storage Driver: overlay2
+  Backing Filesystem: btrfs
+  Supports d_type: true
+  Using metacopy: false
+  Native Overlay Diff: true
+  userxattr: false
+ Logging Driver: json-file
+ Cgroup Driver: cgroupfs
+ Cgroup Version: 2
+ Plugins:
+  Volume: local
+WARNING: DOCKER_INSECURE_NO_IPTABLES_RAW is set
+
+## 3) 어떤 엔진에 연결되어 있는지 (OrbStack 사용 확인)
+$ docker context ls
+NAME         DESCRIPTION                               DOCKER ENDPOINT                                            ERROR
+default      Current DOCKER_HOST based configuration   unix:///var/run/docker.sock                                
+orbstack *   OrbStack                                  unix:///Users/nika.dev02147536/.orbstack/run/docker.sock   
+
+$ docker info --format "Server Version: {{.ServerVersion}} / OS: {{.OperatingSystem}} / Arch: {{.Architecture}} / CPUs: {{.NCPU}} / Images: {{.Images}} / Containers: {{.Containers}}"
+Server Version: 28.5.2 / OS: OrbStack / Arch: x86_64 / CPUs: 6 / Images: 0 / Containers: 0
+
