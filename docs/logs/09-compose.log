@@ -1,0 +1,124 @@
+## 1) 기존 실습 컨테이너 정리
+$ docker ps -a --format "table {{.Names}}	{{.Status}}"
+NAMES      STATUS
+web-bind   Up 27 minutes (healthy)
+web-8080   Up 36 minutes (healthy)
+
+$ docker rm -f web-8080 web-bind
+web-8080
+web-bind
+
+$ docker ps -a
+CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+
+## 2) Compose 설정 검증 및 실행
+$ docker compose config --quiet && echo "YAML 문법 정상"
+YAML 문법 정상
+
+$ docker compose up -d 2>&1 | tail -12
+ Network cody-e1-1_default  Creating
+ Network cody-e1-1_default  Created
+ Volume cody-e1-1_cache-data  Creating
+ Volume cody-e1-1_cache-data  Created
+ Container cody-cache  Creating
+ Container cody-cache  Created
+ Container cody-web  Creating
+ Container cody-web  Created
+ Container cody-cache  Starting
+ Container cody-cache  Started
+ Container cody-web  Starting
+ Container cody-web  Started
+
+## 3) 상태 확인 (docker compose ps)
+$ docker compose ps
+NAME         IMAGE            COMMAND                   SERVICE   CREATED                  STATUS                                     PORTS
+cody-cache   redis:7-alpine   "docker-entrypoint.s…"   cache     Less than a second ago   Up Less than a second                      6379/tcp
+cody-web     cody-web:1.0     "/docker-entrypoint.…"   web       Less than a second ago   Up Less than a second (health: starting)   80/tcp, 0.0.0.0:8090->8080/tcp, [::]:8090->8080/tcp
+
+$ docker ps --format "table {{.Names}}	{{.Status}}	{{.Ports}}"
+NAMES        STATUS                                     PORTS
+cody-web     Up Less than a second (health: starting)   80/tcp, 0.0.0.0:8090->8080/tcp, [::]:8090->8080/tcp
+cody-cache   Up Less than a second                      6379/tcp
+
+## 4) 호스트에서 웹 접속 + 환경변수 확인
+$ curl -s http://localhost:8090/healthz
+ok
+
+$ curl -s http://localhost:8090/env
+APP_ENV=compose
+NGINX_PORT=8080
+
+$ curl -s http://localhost:8090/ | grep "<h1>"
+    <h1>개발 워크스테이션 구축</h1>
+
+$ docker compose ps --format "table {{.Name}}	{{.Status}}"
+NAME         STATUS
+cody-cache   Up 32 seconds
+cody-web     Up 31 seconds (healthy)
+
+## 5) 컨테이너 간 통신 : web 에서 서비스 이름 'cache' 로 접근
+$ docker compose exec web getent hosts cache
+192.168.97.2      cache  cache
+
+$ docker compose exec web sh -c "echo -e \"PING\" | nc cache 6379"
++PONG
+
+$ docker compose exec cache redis-cli -h cache ping
+PONG
+
+$ docker compose exec cache redis-cli set greeting "hello-from-compose"
+OK
+
+$ docker compose exec cache redis-cli get greeting
+hello-from-compose
+
+## 6) 호스트에서는 cache 에 직접 접근할 수 없다 (포트를 열지 않았으므로)
+$ curl -s --max-time 3 http://localhost:6379 ; echo "종료코드=$?"
+종료코드=7
+
+## 7) 로그 확인 (docker compose logs)
+$ docker compose logs --tail 5
+cody-web    | 2026/07/28 09:28:46 [notice] 1#1: start worker process 29
+cody-web    | 2026/07/28 09:28:46 [notice] 1#1: start worker process 30
+cody-web    | 2026/07/28 09:28:46 [notice] 1#1: start worker process 31
+cody-web    | 192.168.97.1 - - [28/Jul/2026:09:29:18 +0000] "GET /env HTTP/1.1" 200 32 "-" "curl/8.7.1" "-"
+cody-web    | 192.168.97.1 - - [28/Jul/2026:09:29:18 +0000] "GET / HTTP/1.1" 200 1159 "-" "curl/8.7.1" "-"
+cody-cache  | 1:C 28 Jul 2026 09:28:46.582 * Configuration loaded
+cody-cache  | 1:M 28 Jul 2026 09:28:46.582 * monotonic clock: POSIX clock_gettime
+cody-cache  | 1:M 28 Jul 2026 09:28:46.583 * Running mode=standalone, port=6379.
+cody-cache  | 1:M 28 Jul 2026 09:28:46.584 * Server initialized
+cody-cache  | 1:M 28 Jul 2026 09:28:46.584 * Ready to accept connections tcp
+
+## 8) 종료 (docker compose down) - 컨테이너/네트워크는 삭제, 볼륨은 유지
+$ docker compose down
+ Container cody-web  Stopping
+ Container cody-web  Stopped
+ Container cody-web  Removing
+ Container cody-web  Removed
+ Container cody-cache  Stopping
+ Container cody-cache  Stopped
+ Container cody-cache  Removing
+ Container cody-cache  Removed
+ Network cody-e1-1_default  Removing
+ Network cody-e1-1_default  Removed
+
+$ docker ps -a
+CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+
+$ docker volume ls
+DRIVER    VOLUME NAME
+local     cody-data
+local     cody-e1-1_cache-data
+
+## 9) 다시 올리면? (볼륨에 저장된 redis 데이터가 살아있는지)
+$ docker compose up -d 2>&1 | tail -6
+ Container cody-web  Creating
+ Container cody-web  Created
+ Container cody-cache  Starting
+ Container cody-cache  Started
+ Container cody-web  Starting
+ Container cody-web  Started
+
+$ docker compose exec cache redis-cli get greeting
+hello-from-compose
+

@@ -13,7 +13,8 @@
 | 5 | [Dockerfile과 이미지 빌드](05-build.md) | [05-build.log](../logs/05-build.log) | 레이어와 캐시, 빌드/실행 시점, FROM 상속 |
 | 6 | [포트 매핑](06-port.md) | [06-port.log](../logs/06-port.log) | 네트워크 격리, `-p 호스트:컨테이너` |
 | 7 | [바인드 마운트와 볼륨](07-mount-volume.md) | [07-mount-volume.log](../logs/07-mount-volume.log) | 실시간 반영, 데이터 영속성 |
-| 8 | (진행 예정) | | Git 설정 → GitHub 연동 → 제출 |
+| 8 | (README 참고) | [08-git.log](../logs/08-git.log) | Git 설정, GitHub 연동, 제출 |
+| 9 | [Docker Compose](09-compose.md) *(보너스)* | [09-compose.log](../logs/09-compose.log) | 서비스 디스커버리, 멀티 컨테이너 |
 
 ## 단계별 한 줄 요약
 
@@ -25,6 +26,8 @@
 - **5단계** — Dockerfile 한 줄이 층 하나. **층이 깨지면 그 위가 전부 다시 만들어진다.**
 - **6단계** — `EXPOSE`는 문패, `-p`는 문. 내부 포트는 같아도 되고 **바깥 포트만 달라야** 한다.
 - **7단계** — 바인드 마운트는 **내 파일을 보여주는 것**, 볼륨은 **컨테이너 데이터를 밖에 보관하는 것**.
+- **8단계** — `git commit`은 로컬까지, **GitHub 반영은 `git push`** 부터.
+- **9단계** — Compose는 새 기술이 아니라 **`run` 옵션을 파일로 옮긴 것**. 서비스 이름이 곧 주소다.
 
 ## 아직 남은 궁금증 / 다음에 확인할 것
 

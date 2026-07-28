@@ -93,6 +93,7 @@ git version 2.53.0
 ```
 cody-e1-1/
 ├── Dockerfile                  # 커스텀 이미지 레시피 (직접 작성)
+├── docker-compose.yml          # 멀티 컨테이너 실행 설정 (보너스)
 ├── .dockerignore               # 빌드 컨텍스트 제외 목록
 ├── app/
 │   ├── site/                   # 웹 서버가 서빙하는 정적 콘텐츠
@@ -109,9 +110,10 @@ cody-e1-1/
     │   ├── 05-build.log
     │   ├── 06-port.log
     │   ├── 07-mount-volume.log
-    │   └── 08-git.log
+    │   ├── 08-git.log
+    │   └── 09-compose.log
     ├── learning/               # 단계별 개념 정리 및 시행착오 (학습 일지)
-    └── images/                 # 브라우저 접속 스크린샷
+    └── images/                 # 브라우저 접속 · 연동 스크린샷
 ```
 
 ---
@@ -553,7 +555,65 @@ GitHub는 그 저장소를 올려두고 공유·협업하는 **원격 플랫폼*
 
 ---
 
-## 11. 학습 일지
+## 11. 보너스 과제 — Docker Compose
+
+`docker run`의 긴 옵션들을 [`docker-compose.yml`](docker-compose.yml)로 옮겨,
+**웹 서버(`web`) + 캐시 서버(`cache`)** 두 서비스를 함께 실행했습니다.
+
+```sh
+docker compose up -d      # 실행 (네트워크·볼륨까지 자동 생성)
+docker compose ps         # 상태
+docker compose logs       # 전체 서비스 로그 합쳐 보기
+docker compose down       # 종료 (볼륨은 유지)
+```
+
+### 컨테이너 간 통신 (서비스 디스커버리)
+
+```
+$ docker compose exec web getent hosts cache
+192.168.97.2      cache                      ← 서비스 이름이 IP로 해석됨
+
+$ docker compose exec web sh -c 'echo "PING" | nc cache 6379'
++PONG                                        ← 웹 → 캐시 통신 성공
+
+$ curl -s --max-time 3 http://localhost:6379
+종료코드=7                                    ← 호스트에서는 접근 불가
+```
+
+`cache`에는 `ports:`를 두지 않아 **외부에 노출되지 않고 내부에서만** 접근됩니다.
+컨테이너 IP는 재시작 시 바뀌므로, 애플리케이션은 IP가 아니라 **서비스 이름**으로 연결합니다.
+
+### 환경 변수 주입
+
+```
+$ curl -s http://localhost:8090/env
+APP_ENV=compose                              ← docker-compose.yml 의 environment 값
+NGINX_PORT=8080
+```
+
+### 종료 후 데이터 유지
+
+```
+$ docker compose down && docker compose up -d
+$ docker compose exec cache redis-cli get greeting
+hello-from-compose                           ← 이름 있는 볼륨 덕분에 유지 ✅
+```
+
+`down`은 컨테이너·네트워크만 삭제하고 볼륨은 남깁니다. (데이터까지 지우려면 `down -v`)
+
+전체 로그: [`09-compose.log`](docs/logs/09-compose.log) · 정리: [학습 일지 9단계](docs/learning/09-compose.md)
+
+| 보너스 항목 | 상태 |
+|---|---|
+| Docker Compose 기초 (단일 서비스 실행) | ✅ |
+| Compose 멀티 컨테이너 + 컨테이너 간 통신 | ✅ |
+| Compose 운영 명령 (`up`/`down`/`ps`/`logs`) | ✅ |
+| 환경 변수 활용 (설정과 코드의 분리) | ✅ |
+| GitHub SSH 키 설정 | 진행 예정 |
+
+---
+
+## 12. 학습 일지
 
 각 단계의 개념 정리, 헷갈리기 쉬운 지점, 진행 중 나온 질문과 답을 별도로 정리했습니다.
 
@@ -567,10 +627,11 @@ GitHub는 그 저장소를 올려두고 공유·협업하는 **원격 플랫폼*
 | 5 | [Dockerfile과 이미지 빌드](docs/learning/05-build.md) | 레이어와 캐시, 빌드/실행 시점 |
 | 6 | [포트 매핑](docs/learning/06-port.md) | 네트워크 격리, `-p` |
 | 7 | [바인드 마운트와 볼륨](docs/learning/07-mount-volume.md) | 실시간 반영, 데이터 영속성 |
+| 9 | [Docker Compose](docs/learning/09-compose.md) *(보너스)* | 서비스 디스커버리, 멀티 컨테이너 |
 
 ---
 
-## 12. 보안 / 개인정보
+## 13. 보안 / 개인정보
 
 - 로그·스크린샷에 토큰, 비밀번호, 개인키, 인증 코드가 포함되지 않도록 확인했습니다.
 - `git config --list` 출력은 `credential`/`token`/`password` 항목을 제외하고 기록했습니다.
