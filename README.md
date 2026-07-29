@@ -400,24 +400,7 @@ Content-Length: 1159
 
 ![포트 8081 접속](docs/images/browser-8081.png)
 
-### 환경 변수로 포트·모드 바꾸기 (보너스)
-
-**이미지를 다시 빌드하지 않고** 실행 옵션만으로 설정을 바꿉니다. 이것이 커스텀 포인트 ②의 목적입니다.
-
-```sh
-docker run -d -p 8082:9090 -e NGINX_PORT=9090 -e APP_ENV=production --name web-9090 cody-web:1.0
-```
-
-```
-$ curl -s http://localhost:8082/env
-APP_ENV=production          ← 이미지 기본값 dev 를 덮어씀
-NGINX_PORT=9090
-
-$ docker exec web-9090 grep listen /etc/nginx/conf.d/default.conf
-    listen       9090;      ← 설정 파일이 시작 시점에 실제로 다시 생성됨
-```
-
-![환경변수 확인](docs/images/browser-env.png)
+> 재빌드 없이 `-e`로 **포트·모드까지 바꾸는** 실습은 보너스 항목이라 [7.2절](#72-환경-변수-활용)에 정리했습니다.
 
 전체 출력: [`06-port.log`](docs/logs/06-port.log) · [학습 일지 6단계](docs/learning/06-port.md)
 
@@ -622,13 +605,32 @@ hello-from-compose                           ← 이름 있는 볼륨 덕분에 
 
 ### 7.2 환경 변수 활용
 
-[4절](#환경-변수로-포트모드-바꾸기-보너스)의 `-e` 주입과 동일한 구조를 Compose의 `environment:`로도 확인했습니다.
+**이미지를 다시 빌드하지 않고** 실행 옵션만으로 설정을 바꿉니다. 이것이 커스텀 포인트 ②의 목적입니다.
+
+```sh
+docker run -d -p 8082:9090 -e NGINX_PORT=9090 -e APP_ENV=production --name web-9090 cody-web:1.0
+```
+
+```
+$ curl -s http://localhost:8082/env
+APP_ENV=production          ← 이미지 기본값 dev 를 덮어씀
+NGINX_PORT=9090
+
+$ docker exec web-9090 grep listen /etc/nginx/conf.d/default.conf
+    listen       9090;      ← 설정 파일이 시작 시점에 실제로 다시 생성됨
+```
+
+![환경변수 확인](docs/images/browser-env.png)
+
+같은 구조를 Compose에서는 `environment:`로 선언합니다([7.1절](#71-docker-compose--실행-명령을-문서로)).
 
 ```
 $ curl -s http://localhost:8090/env
 APP_ENV=compose                              ← docker-compose.yml 의 environment 값
 NGINX_PORT=8080
 ```
+
+전체 출력: [`06-port.log`](docs/logs/06-port.log) · [학습 일지 6단계](docs/learning/06-port.md)
 
 ### 7.3 GitHub SSH 키
 
