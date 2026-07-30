@@ -46,6 +46,7 @@ git version 2.53.0
 | 권한 | 파일 1개 + 디렉토리 1개 권한 변경 전/후 비교 (`r`/`w`/`x` 각각) | ✅ | [1절](#12-권한--rwx와-755644) · [02-permission.log](docs/logs/02-permission.log) |
 | Docker 점검 | `docker --version`, `docker info`(데몬 동작), `docker context ls` | ✅ | [2절](#21-cli와-데몬은-다른-프로그램이다) · [03-docker-check.log](docs/logs/03-docker-check.log) |
 | 컨테이너 실행 | `hello-world`, `ubuntu` 내부 진입, exec/attach 차이, `logs`·`stats`·`ps -a`·`images` | ✅ | [2절](#22-이미지와-컨테이너는-별개다) · [04-container-run.log](docs/logs/04-container-run.log) |
+| 컨테이너 정리 | `stop`/`start`/`rm -f`/`container prune`, dangling 이미지 정리 | ✅ | [2.5절](#25-컨테이너-정리--지워도-이미지는-남는다) · [04-container-run.log](docs/logs/04-container-run.log) |
 | Dockerfile | 직접 작성 → 커스텀 이미지 빌드 → 컨테이너 실행 | ✅ | [3절](#3-내-이미지-만들기--dockerfile) · [Dockerfile](Dockerfile) · [05-build.log](docs/logs/05-build.log) |
 | 포트 매핑 | 서로 다른 호스트 포트로 2회 접속 (브라우저 화면 증거) | ✅ | [4절](#4-포트-매핑--격리된-컨테이너에-길을-내주기) · [06-port.log](docs/logs/06-port.log) |
 | 마운트/볼륨 | 바인드 마운트 변경 전/후, 볼륨 컨테이너 삭제 전/후 | ✅ | [5절](#5-바인드-마운트와-볼륨--파일은-어디에-남는가) · [07-mount-volume.log](docs/logs/07-mount-volume.log) |
@@ -273,6 +274,72 @@ CONTAINER ID   NAME            CPU %   MEM USAGE / LIMIT   MEM %   PIDS
 f9b3d044178e   ubuntu-daemon   0.00%   900KiB / 15.67GiB   0.01%   1
                                        ↑ VM(수 GB)과 달리 프로세스 하나 수준
 ```
+
+### 2.5 컨테이너 정리 — 지워도 이미지는 남는다
+
+컨테이너는 **버리는 것을 전제로 만드는 것**입니다. `stop`(중지) → `start`(재시작) → `rm`(삭제)까지
+한 사이클을 돌려보고, 마지막에 남은 것과 사라진 것을 대조했습니다.
+
+**중지는 삭제가 아닙니다.** `stop` 후에도 컨테이너는 `Exited` 상태로 남아 있고, `start`로 그대로 되살아납니다.
+
+```
+$ docker stop ubuntu-daemon
+ubuntu-daemon
+
+$ docker ps -a --format "table {{.Names}}\t{{.Status}}"
+NAMES           STATUS
+ubuntu-attach   Exited (0) 21 seconds ago
+ubuntu-daemon   Exited (137) Less than a second ago     ← 중지됐지만 남아 있음
+ubuntu-lab      Exited (0) 27 minutes ago
+
+$ docker start ubuntu-daemon           ← 그대로 되살아난다
+ubuntu-daemon
+```
+
+여기서 종료 코드가 `Exited (137)`인 게 눈에 띄었습니다. `137 = 128 + 9`, 즉 **SIGKILL로 죽었다**는 뜻입니다.
+`docker stop`은 먼저 SIGTERM을 보내고 기다렸다가 응답이 없으면 SIGKILL을 보내는데,
+PID 1인 `sleep infinity`는 SIGTERM을 처리하지 않으니 결국 강제 종료된 것입니다. (정상 종료는 위 `Exited (0)`)
+
+```
+$ docker rm -f ubuntu-daemon ubuntu-attach ubuntu-lab     # 실행 중이어도 강제 삭제
+ubuntu-daemon
+ubuntu-attach
+ubuntu-lab
+
+$ docker container prune -f                               # 종료 상태로 남은 것 일괄 정리
+Deleted Containers:
+2951c374aebf9e46254eef64f34a6394b12f4fed695a3aab15e3ad066dae9b7c
+
+$ docker ps -a                                            # 컨테이너: 전부 사라짐
+CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+
+$ docker images                                           # 이미지: 그대로 남아 있음 ✅
+REPOSITORY    TAG       IMAGE ID       CREATED        SIZE
+ubuntu        24.04     ef91e4b15da8   5 weeks ago    78.1MB
+hello-world   latest    e2ac70e7319a   4 months ago   10.1kB
+```
+
+**컨테이너를 다 지웠는데 이미지는 남아 있다** — [2.2절](#22-이미지와-컨테이너는-별개다)의 "이미지와 컨테이너는 별개"를
+가장 잘 보여주는 장면입니다. 언제든 같은 이미지로 다시 만들면 됩니다.
+
+이미지 쪽도 정리했습니다. [3.3절](#33-빌드-결과와-레이어캐시)에서 콘텐츠를 고쳐 같은 태그로 재빌드하면
+`cody-web:1.0`이라는 **이름표가 새 이미지로 옮겨가고 이전 이미지는 이름을 잃습니다.** 이것이 `<none>` 이미지입니다.
+
+```
+$ docker images -f "dangling=true"
+REPOSITORY   TAG       IMAGE ID       CREATED          SIZE
+<none>       <none>    2c222dde262a   24 minutes ago   48.2MB     ← 재빌드로 이름을 잃은 이전 이미지
+
+$ docker image prune -f
+Deleted Images:
+deleted: sha256:2c222dde262a9a4928561fe451ce3b081085c4e3c121537187dd7067237bdca8
+```
+
+정리를 안 하면 실제로 문제가 생깁니다. [8절 ③](#8-트러블슈팅)에서 실패한 컨테이너를 방치했다가
+다음 실행 때 **"이름이 이미 존재한다"는 별개의 에러**를 만났습니다.
+이후 단계에서도 실습이 끝날 때마다 정리했습니다 — [`06-port.log`](docs/logs/06-port.log)(`web-nomap`, `web-dup`),
+[`07-mount-volume.log`](docs/logs/07-mount-volume.log)(`web-8081`, `web-9090`, `novol`, `vol-test1`, `vol-test2`),
+[`09-compose.log`](docs/logs/09-compose.log)(`docker compose down`).
 
 전체 출력: [`04-container-run.log`](docs/logs/04-container-run.log) · [학습 일지 4단계](docs/learning/04-container-run.md)
 
@@ -693,7 +760,7 @@ origin  git@github.com:nan-park/cody-e1-1.git (push)
 - **문제**: 세 번째 컨테이너를 `-p 8080:8080`으로 띄우자 `Bind for :::8080 failed: port is already allocated`.
 - **원인 가설**: 호스트 포트 8080을 이미 다른 컨테이너가 점유
 - **확인**: `docker ps`에서 `web-8080`이 `0.0.0.0:8080->8080/tcp`로 사용 중. 추가로 `docker ps -a`에 **실패한 컨테이너가 `Created` 상태로 남아 있음**을 발견 (= create는 성공하고 start에서 실패).
-- **해결/배움**: 다른 호스트 포트(`-p 8081:8080`)를 사용. 남은 컨테이너는 `docker rm -f`로 정리 — 방치하면 다음 실행 때 "이름이 이미 존재한다"는 **별개의 에러**가 난다. → [06-port.log](docs/logs/06-port.log)
+- **해결/배움**: 다른 호스트 포트(`-p 8081:8080`)를 사용. 남은 컨테이너는 `docker rm -f`로 정리 — 방치하면 다음 실행 때 "이름이 이미 존재한다"는 **별개의 에러**가 난다. → [2.5절](#25-컨테이너-정리--지워도-이미지는-남는다) · [06-port.log](docs/logs/06-port.log)
 
 ---
 
