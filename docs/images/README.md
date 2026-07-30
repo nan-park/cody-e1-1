@@ -9,6 +9,7 @@
 | `browser-8081.png` | 포트 매핑 접속 ② (같은 이미지, 다른 포트) | http://localhost:8081 |
 | `browser-env.png` | 환경변수 주입 결과 (선택) | http://localhost:8082/env |
 | `vscode-github.png` | VSCode GitHub 연동 화면 (8단계) | – |
+| `github-repo.png` | GitHub 저장소 페이지 (Public, 커밋 이력, README 렌더링) | https://github.com/nan-park/cody-e1-1 |
 
 ## 캡처 방법 (macOS)
 

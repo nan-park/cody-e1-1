@@ -26,11 +26,12 @@
 ### 실행 환경
 
 ```
-$ sw_vers | head -2 && echo $SHELL && uname -m
-ProductName:     macOS          # OS: macOS 15.7.4 (Darwin 24.6.0)
-ProductVersion:  15.7.4
-/bin/zsh                        # 셸/터미널: zsh
-x86_64                          # 아키텍처
+$ sw_vers && echo "Shell: $SHELL" && echo "Arch: $(uname -m)"
+ProductName:		macOS          # OS: macOS 15.7.4 (Darwin 24.6.0)
+ProductVersion:		15.7.4
+BuildVersion:		24G517
+Shell: /bin/zsh                        # 셸 (터미널 앱: macOS 기본 Terminal.app)
+Arch: x86_64                           # 아키텍처
 
 $ docker --version && docker compose version && git --version
 Docker version 28.5.2, build ecc6942      # 런타임은 OrbStack 컨텍스트 (sudo 불필요)
@@ -216,9 +217,20 @@ CONTAINER ID   IMAGE         COMMAND    STATUS                     NAMES
 `ubuntu` 컨테이너에 들어가 보면, 호스트가 macOS인데도 안은 **완전한 Ubuntu 파일 시스템**입니다.
 
 ```
+$ docker pull ubuntu:24.04            # 실행과 분리해서 이미지만 먼저 내려받기
+24.04: Pulling from library/ubuntu
+ca2678b20700: Pull complete
+...
+Status: Downloaded newer image for ubuntu:24.04
+
 $ docker run -it --name ubuntu-lab ubuntu:24.04 bash
+root@227c9a06f727:/# ls /
+bin   dev  home  lib64  mnt  proc  run   srv  tmp  var
+boot  etc  lib   media  opt  root  sbin  sys  usr
 root@227c9a06f727:/# head -2 /etc/os-release
 PRETTY_NAME="Ubuntu 24.04.4 LTS"
+root@227c9a06f727:/# echo "hello from ubuntu container"
+hello from ubuntu container
 root@227c9a06f727:/# cat /etc/hostname
 227c9a06f727                          ← 컨테이너 ID = 호스트네임 (격리된 자기 세계)
 root@227c9a06f727:/# exit
